@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -e
+
+export TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:?Set TELEGRAM_BOT_TOKEN first}"
+export TELEGRAM_ALLOWED_USER_ID='8189470712'
+export AI_BOT_PROMPT_FILE="$HOME/ai-bot/prompts/default.txt"
+export LMSTUDIO_BASE='http://127.0.0.1:1234'
+export LMSTUDIO_MODEL='qwen3.5-9b-uncensored-hahuacs-aggressive'
+
+cd "$HOME"
+
+echo "=== START AI BOT ==="
+echo "Prompt: $AI_BOT_PROMPT_FILE"
+echo "LM Studio: $LMSTUDIO_BASE"
+echo "Model: $LMSTUDIO_MODEL"
+echo "User ID: $TELEGRAM_ALLOWED_USER_ID"
+echo
+
+python3 "$HOME/bot.py"

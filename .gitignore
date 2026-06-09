@@ -1,0 +1,7 @@
+.env
+*.log
+__pycache__/
+*.pyc
+.ai_bot_last_update_id
+backups/
+tokens.txt
