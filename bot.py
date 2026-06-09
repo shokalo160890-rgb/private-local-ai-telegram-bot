@@ -253,21 +253,30 @@ def tg_send(chat_id, text):
 
 def tg_updates(offset=None):
     params = {
-        "timeout": 30,
+        "timeout": 20,
         "allowed_updates": ["message"]
     }
 
     if offset is not None:
         params["offset"] = offset
 
-    r = requests.get(
-        f"{TG_API}/getUpdates",
-        params=params,
-        timeout=40
-    )
+    try:
+        r = requests.get(
+            f"{TG_API}/getUpdates",
+            params=params,
+            timeout=60
+        )
+        r.raise_for_status()
+        return r.json()
 
-    r.raise_for_status()
-    return r.json()
+    except requests.exceptions.ReadTimeout:
+        print("TELEGRAM_TIMEOUT: getUpdates timed out, retrying...")
+        return {"result": []}
+
+    except requests.exceptions.ConnectionError as e:
+        print("TELEGRAM_CONNECTION_ERROR:", e)
+        time.sleep(5)
+        return {"result": []}
 
 
 def save_offset(offset):
@@ -285,20 +294,28 @@ def load_offset():
 
 
 def flush_old_updates():
-    data = tg_updates(None)
-    updates = data.get("result", [])
+    try:
+        data = tg_updates(None)
+        updates = data.get("result", [])
 
-    if not updates:
+        if not updates:
+            offset = load_offset()
+            print("NO OLD UPDATES")
+            return offset
+
+        last_update_id = updates[-1]["update_id"]
+        offset = last_update_id + 1
+        save_offset(offset)
+
+        print(f"FLUSHED OLD UPDATES: {len(updates)}")
+        print(f"NEW OFFSET: {offset}")
+
+        return offset
+
+    except Exception as e:
+        print("FLUSH_ERROR:", type(e).__name__, e)
+        print("CONTINUE WITHOUT FLUSH")
         return load_offset()
-
-    last_update_id = updates[-1]["update_id"]
-    offset = last_update_id + 1
-    save_offset(offset)
-
-    print(f"FLUSHED OLD UPDATES: {len(updates)}")
-    print(f"NEW OFFSET: {offset}")
-
-    return offset
 
 
 def ask_ai(text):
